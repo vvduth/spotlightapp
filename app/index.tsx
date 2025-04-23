@@ -4,6 +4,6 @@ import { Href, Redirect } from 'expo-router'
 
 export default function Index() {
   return (
-    <Redirect href={"/(tabs)" as Href } />
+    <Redirect href={"/(auth)/sign-in" as Href } />
   )
 }
