@@ -1,26 +1,9 @@
-import { Link } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
+import React from 'react'
+import { Href, Redirect } from 'expo-router'
 
 export default function Index() {
   return (
-    <View
-      style={
-        styles.container
-      }
-    >
-      <Link href={"/notification"}>Visit nofitycation</Link>
-    </View>
-  );
+    <Redirect href={"/(tabs)" as Href } />
+  )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1, 
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    color: "red",
-    fontSize: 50
-  }
-})
