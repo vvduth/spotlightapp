@@ -1,6 +1,6 @@
 import React from "react";
 import { Href, Redirect } from "expo-router";
-import { TouchableOpacity, View, Text, ScrollView } from "react-native";
+import { TouchableOpacity, View, Text, ScrollView, FlatList } from "react-native";
 import { useAuth } from "@clerk/clerk-expo";
 import { Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,6 +11,18 @@ import { useQueries, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Loader } from "@/components/Loader";
 import Post from "@/components/Post";
+
+const StoriesSection = ()=> (
+   <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingVertical: 2, gap: 16 }}
+        >
+          {STORIES.map((story) => (
+            <Story key={story.id} story={story} />
+          ))}
+        </ScrollView> 
+)
 
 export default function Index() {
   const { signOut } = useAuth();
@@ -58,18 +70,16 @@ export default function Index() {
           <Ionicons name="log-out-outline" size={24} color="black" />
         </TouchableOpacity>
       </View>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* stroes */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingVertical: 2, gap: 16 }}
-        >
-          {STORIES.map((story) => (
-            <Story key={story.id} story={story} />
-          ))}
-        </ScrollView>
-
+      
+       
+        <FlatList 
+          data={posts}
+          renderItem={({ item }) => <Post post={item} />}
+          keyExtractor={(item) => item._id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ gap: 16, paddingBottom:60 }}
+          ListHeaderComponent={<StoriesSection />}
+        />
         <View
           style={{
             height: 1,
@@ -77,15 +87,7 @@ export default function Index() {
             marginVertical: 2,
           }}
         />
-        
-        {/* Post */}
-        {posts.map((post, index) => (
-          <Post 
-            key={index}
-            post={post}
-          />
-        ))}
-      </ScrollView>
+     
     </View>
   );
 }
