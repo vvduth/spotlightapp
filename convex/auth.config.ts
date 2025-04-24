@@ -1,8 +1,11 @@
 export default {
     providers: [
       {
-        domain: "https://handsome-ocelot-917.accounts.dev/",
+        domain: "https://warm-troll-44.clerk.accounts.dev/",
         applicationID: "convex",
       },
     ]
   };
+
+
+  //https://warm-troll-44.clerk.accounts.dev
