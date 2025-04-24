@@ -1,3 +1,9 @@
+import { COLORS } from "@/constants/theme";
+import { styles } from "@/styles/create.styles";
+import { useUser } from "@clerk/clerk-expo";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -6,168 +12,171 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  TextInput,
 } from "react-native";
-import React, { useState } from "react";
-import { useRouter } from "expo-router";
-import { useUser } from "@clerk/clerk-expo";
-import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from "@/constants/theme";
-import { StyleSheet } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 
-export default function Create() {
+import { Image } from "expo-image";
+
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
+
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+
+export default function CreateScreen() {
   const router = useRouter();
   const { user } = useUser();
 
-  const [caption, setcaption] = useState("");
+  const [caption, setCaption] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSharing, setIsSharing] = useState(false);
 
   const pickImage = async () => {
-    console.log("pick image");
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) setSelectedImage(result.assets[0].uri);
+  };
+
+  const generateUploadUrl = useMutation(api.posts.generateuploadUrl);
+  const createPost = useMutation(api.posts.createPost);
+
+  const handleShare = async () => {
+    if (!selectedImage) return;
+
     try {
-      const resutl = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: "images",
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
+      setIsSharing(true);
+      const uploadUrl = await generateUploadUrl();
+
+      const uploadResult = await FileSystem.uploadAsync(uploadUrl, selectedImage, {
+        httpMethod: "POST",
+        uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+        mimeType: "image/jpeg",
       });
 
-      if (!resutl.canceled) {
-        setSelectedImage(resutl.assets[0].uri);
-      } else {
-        alert("You did not select any image");
-      }
+      if (uploadResult.status !== 200) throw new Error("Upload failed");
+
+      const { storageId } = JSON.parse(uploadResult.body);
+      await createPost({ storageId, caption });
+
+      setSelectedImage(null);
+      setCaption("");
+
+      router.push("/(tabs)");
     } catch (error) {
-      console.error("Error picking image:", error);
-      alert("An error occurred while picking the image.");
+      console.log("Error sharing post");
+    } finally {
+      setIsSharing(false);
     }
   };
 
-  const handleShare= async () => {
-
-  }
   if (!selectedImage) {
     return (
       <View style={styles.container}>
-        {/* Header Section */}
         <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backButton}
-          >
+          <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={28} color={COLORS.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create New Post</Text>
-          <View style={styles.placeholder} />
+          <Text style={styles.headerTitle}>New Post</Text>
+          <View style={{ width: 28 }} />
         </View>
 
-        {/* Image Selection Section */}
-        <TouchableOpacity style={styles.imageSelector} onPress={pickImage}>
-          <Ionicons name="camera" size={48} color={COLORS.surface} />
-          <Text style={styles.imageSelectorText}>Tap to select an image</Text>
+        <TouchableOpacity style={styles.emptyImageContainer} onPress={pickImage}>
+          <Ionicons name="image-outline" size={48} color={COLORS.accent} />
+          <Text style={styles.emptyImageText}>Tap to select an image</Text>
         </TouchableOpacity>
       </View>
     );
   }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
     >
-      {/* header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => {
-            setSelectedImage(null);
-            setcaption("");
-          }}
-          disabled={isSharing}
-        >
-          <Ionicons
-            name="close-outline"
-            size={28}
-            color={isSharing ? COLORS.warning : COLORS.accent}
-          />
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>New post</Text>
-        <TouchableOpacity
-        style={[]}
-        disabled={isSharing}
-        onPress={handleShare}>
-          {
-            isSharing ? (
-             <ActivityIndicator size={"small"} color={COLORS.primary}  />
+      <View style={styles.contentContainer}>
+        {/* HEADER */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedImage(null);
+              setCaption("");
+            }}
+            disabled={isSharing}
+          >
+            <Ionicons
+              name="close-outline"
+              size={28}
+              color={isSharing ? COLORS.accent : COLORS.primary}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>New Post</Text>
+          <TouchableOpacity
+            style={[styles.shareButton, isSharing && styles.shareButtonDisabled]}
+            disabled={isSharing || !selectedImage}
+            onPress={handleShare}
+          >
+            {isSharing ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
             ) : (
-              <Text>Share</Text>
-            )
-          }
+              <Text style={styles.shareText}>Share</Text>
+            )}
+          </TouchableOpacity>
+        </View>
 
-        </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          bounces={false}
+          keyboardShouldPersistTaps="handled"
+          contentOffset={{ x: 0, y: 100 }}
+        >
+          <View style={[styles.content, isSharing && styles.contentDisabled]}>
+            {/* IMAGE SECTION */}
+            <View style={styles.imageSection}>
+              <Image
+                source={selectedImage}
+                style={styles.previewImage}
+                contentFit="cover"
+                transition={200}
+              />
+              <TouchableOpacity
+                style={styles.changeImageButton}
+                onPress={pickImage}
+                disabled={isSharing}
+              >
+                <Ionicons name="image-outline" size={20} color={COLORS.primary} />
+                <Text style={styles.changeImageText}>Change</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* INPUT SECTION */}
+            <View style={styles.inputSection}>
+              <View style={styles.captionContainer}>
+                <Image
+                  source={user?.imageUrl}
+                  style={styles.userAvatar}
+                  contentFit="cover"
+                  transition={200}
+                />
+                <TextInput
+                  style={styles.captionInput}
+                  placeholder="Write a caption..."
+                  placeholderTextColor={COLORS.accent}
+                  multiline
+                  value={caption}
+                  onChangeText={setCaption}
+                  editable={!isSharing}
+                />
+              </View>
+            </View>
+          </View>
+        </ScrollView>
       </View>
-
-      {/* Image Preview Section */}
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        bounces={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* TODO add dymatic styling based on is sharing */}
-        <View
-        style= {[
-          
-        ]}
-        ></View>
-
-      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    padding: 20,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  backButton: {
-    padding: 5,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    textAlign: "center",
-  },
-  placeholder: {
-    width: 28, // Placeholder for alignment
-  },
-  imageSelector: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 40,
-    padding: 20,
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  imageSelectorText: {
-    marginTop: 10,
-    fontSize: 16,
-    fontWeight: "500",
-    color: COLORS.surface,
-    textAlign: "center",
-  },
-});

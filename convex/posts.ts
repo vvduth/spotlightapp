@@ -1,12 +1,14 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
-const generateuploadUrl = mutation(async (ctx) => {
+export const generateuploadUrl = mutation(async (ctx) => {
   const indentity = await ctx.auth.getUserIdentity();
   if (!indentity) {
     throw new Error("Not authenticated");
   }
   return await ctx.storage.generateUploadUrl();
 });
+
+
 export const createPost = mutation({
   args: {
     caption: v.optional(v.string()),
