@@ -1,5 +1,6 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthenticateduser } from "./users";
 export const generateuploadUrl = mutation(async (ctx) => {
   const indentity = await ctx.auth.getUserIdentity();
   if (!indentity) {
@@ -7,7 +8,6 @@ export const generateuploadUrl = mutation(async (ctx) => {
   }
   return await ctx.storage.generateUploadUrl();
 });
-
 
 export const createPost = mutation({
   args: {
@@ -33,7 +33,7 @@ export const createPost = mutation({
       throw new Error("Image not found");
     }
     // craete post
-    const postId =  await ctx.db.insert("posts", {
+    const postId = await ctx.db.insert("posts", {
       userId: currentUser._id,
       title: caption || "",
       storageId: storageId,
@@ -44,10 +44,94 @@ export const createPost = mutation({
     });
 
     // increment user posts count by 1
-    await ctx.db.patch(currentUser._id , {
-        posts: currentUser.posts + 1,
-    })
+    await ctx.db.patch(currentUser._id, {
+      posts: currentUser.posts + 1,
+    });
 
     return postId;
+  },
+});
+
+export const getFeedPosts = query({
+  handler: async (ctx) => {
+    const currentuser = await getAuthenticateduser(ctx);
+
+    const posts = await ctx.db.query("posts").order("desc").collect();
+
+    if (!posts || posts.length === 0) {
+      throw new Error("No posts found");
+    }
+
+    // enhace posts with user data and interaction data
+    const postWithInfo = await Promise.all(
+      posts.map(async (post) => {
+        const postAuthor = (await ctx.db.get(post.userId))!;
+        const isLiked = await ctx.db
+          .query("likes")
+          .withIndex("by_user_and_post", (q) =>
+            q.eq("userId", currentuser._id).eq("postId", post._id)
+          )
+          .first();
+        const isBookmarked = await ctx.db
+          .query("bookmarks")
+          .withIndex("by_user_and_post", (q) =>
+            q.eq("userId", currentuser._id).eq("postId", post._id)
+          )
+          .first();
+        return {
+          ...post,
+          author: {
+            _id: postAuthor?._id,
+            username: postAuthor?.username,
+            image: postAuthor?.image,
+          },
+          isLiked: !!isLiked,
+          isBookmarked: !!isBookmarked,
+        };
+      })
+    );
+
+    return postWithInfo;
+  },
+});
+
+export const toggleLikePost = mutation({
+  args: { postId: v.id("posts") },
+  handler: async (ctx, args) => {
+    const currentUser = await getAuthenticateduser(ctx);
+    const exisiting = await ctx.db
+      .query("likes")
+      .withIndex("by_user_and_post", (q) =>
+        q.eq("userId", currentUser._id).eq("postId", args.postId)
+      )
+      .first();
+    const post = await ctx.db.get(args.postId);
+    if (!post) {
+      throw new Error("Post not found");
+    }
+    if (exisiting) {
+      // unlike post
+      await ctx.db.delete(exisiting._id);
+      await ctx.db.patch(post._id, { likes: post.likes - 1 });
+    } else {
+      // like post
+      await ctx.db.insert("likes", {
+        userId: currentUser._id,
+        postId: args.postId,
+      });
+      await ctx.db.patch(post._id, { likes: post.likes + 1 });
+
+      // if it not my post create a notification
+      if (currentUser._id !== post.userId) {
+        await ctx.db.insert("notifications", {
+          receiverId: post.userId,
+          senderId: currentUser._id,
+          type: "like",
+          postId: args.postId,
+        });
+      }
+
+    }
+    return exisiting ? false : true;
   },
 });
