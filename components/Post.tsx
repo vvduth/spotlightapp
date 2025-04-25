@@ -9,6 +9,7 @@ import { toggleLikePost } from "@/convex/posts";
 import { api } from "@/convex/_generated/api";
 import { useMutation } from "convex/react";
 import CommentsModal from "./CommentsModal";
+import { formatDistanceToNow } from "date-fns";
 
 type PostProps = {
     post: {
@@ -88,7 +89,7 @@ export default function Post({ post }: PostProps) {
         <TouchableOpacity onPress={handleLike}>
           <Ionicons name={isLiked? "heart": "heart-outline"} size={24} color={COLORS.primary} />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => setShowComments(true)}>
           <Ionicons
             name="chatbubble-outline"
             size={24}
@@ -115,8 +116,14 @@ export default function Post({ post }: PostProps) {
             )
         }
         {post.caption && (
-          <View>
-            <Text>{post.author.username}</Text>
+          <View style={{ flexDirection: "row", marginTop: 4 }}>
+            <Text
+              style={{
+                fontWeight: "bold",
+                color: COLORS.primary,
+                marginRight: 4,
+              }}
+            >{post.author.username}</Text>
             <Text>{post.caption}</Text>
           </View>
         )}
@@ -126,10 +133,16 @@ export default function Post({ post }: PostProps) {
             color: COLORS.primary,
             fontSize: 14,
             marginTop: 4,
-          }}>View all 2 comments</Text>
+          }}>
+            View {commentsCount} {commentsCount > 1 ? "comments" : "comment"}
+          </Text>
         </TouchableOpacity>
 
-        <Text> 2 days ago </Text>
+        <Text style={{
+            color: COLORS.secondary,
+            fontSize: 12,
+            marginTop: 4,
+        }}> {formatDistanceToNow(post._creationTime, {addSuffix: true})} </Text>
       </View>
       <CommentsModal 
         postId = {post._id}

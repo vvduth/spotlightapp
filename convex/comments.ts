@@ -55,7 +55,7 @@ export const getComments = query({
         return {
           ...comment,
           user: {
-            username: user.username,
+            fullname: user.fullname,
             image: user.image,
           },
         };
