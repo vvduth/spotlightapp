@@ -135,3 +135,19 @@ export const toggleLikePost = mutation({
     return exisiting ? false : true;
   },
 });
+
+
+export const deletePost = mutation({
+  args: { postId: v.id("posts") },
+  handler: async (ctx, { postId }) => {
+    const currentUser = await getAuthenticateduser(ctx);
+    const post = await ctx.db.get(postId);
+    if (!post) {
+      throw new Error("Post not found");
+    }
+    if (post.userId !== currentUser._id) {
+      throw new Error("You are not the owner of this post");
+    }
+    await ctx.db.delete(post._id);
+  },
+})
