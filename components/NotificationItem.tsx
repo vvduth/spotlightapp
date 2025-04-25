@@ -4,9 +4,31 @@ import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/theme";
 import { Link } from "expo-router";
 import { Image } from "expo-image";
+import { formatDistanceToNow } from "date-fns";
+import { Id } from "@/convex/_generated/dataModel";
 
 interface NotificationItemProps {
-  notification: any;
+  notification: {
+    sender: {
+      _id: Id<"users">;
+      username: string;
+      image: string;
+  };
+  type: "like" | "comment" | "follow";
+  _creationTime: number;
+  comment?:string, 
+  post: {
+      _id: Id<"posts">;
+      _creationTime: number;
+      caption?: string | undefined;
+      imageUrl: string;
+      title: string;
+      comments: number;
+      userId: string;
+      storageId: string;
+      likes: number;
+  } | null;
+  };
 }
 const NotificationItem = ({ notification }: NotificationItemProps) => {
   return (
@@ -22,8 +44,7 @@ const NotificationItem = ({ notification }: NotificationItemProps) => {
         style={{
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-between",
-          width: "100%",
+          width: "80%",
           padding: 10,
         }}
       >
@@ -36,14 +57,7 @@ const NotificationItem = ({ notification }: NotificationItemProps) => {
               transition={200}
               cachePolicy={"memory-disk"}
             />
-            <View
-              style={{
-                flex: 1,
-                flexDirection: "row",
-                justifyContent: "space-between",
-                backgroundColor: COLORS.accent,
-              }}
-            >
+            <View>
               {notification.type === "like" ? (
                 <>
                   <Ionicons name="heart" size={20} color={COLORS.primary} />
@@ -61,14 +75,49 @@ const NotificationItem = ({ notification }: NotificationItemProps) => {
                   <Ionicons
                     name="chatbubble"
                     size={20}
-                    color={COLORS.textSecondary}
+                    color={COLORS.success}
                   />
                 </>
               )}
             </View>
           </TouchableOpacity>
         </Link>
+
+        <View
+          style={{
+            flexDirection: "column",
+            justifyContent: "space-between",
+            backgroundColor: COLORS.accent,
+            marginLeft: 10,
+          }}
+        >
+          <Link href={`/notification`} asChild>
+            <TouchableOpacity>
+              <Text>{notification.sender.username}</Text>
+            </TouchableOpacity>
+          </Link>
+          <Text>
+            {notification.type === "follow"
+              ? "started following you"
+              : notification.type === "like"
+                ? "liked your post"
+                : `commented: "${notification.comment}"`}
+          </Text>
+          <Text>
+            {formatDistanceToNow(notification._creationTime, {
+              addSuffix: true,
+            })}
+          </Text>
+        </View>
       </View>
+      {notification.post && (
+        <Image
+          source={notification.post.imageUrl}
+          style={{ width: 50, height: 50, borderRadius: 10 }}
+          contentFit="cover"
+          transition={200}
+        />
+      )}
     </View>
   );
 };

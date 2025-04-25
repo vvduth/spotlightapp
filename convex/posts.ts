@@ -171,6 +171,16 @@ export const deletePost = mutation({
     // delete post
     await ctx.db.delete(postId)
 
+    // delete all notifications related to this post
+    const notifications = await ctx.db.query("notifications")
+    .withIndex("by_post", (q) => q.eq("postId", postId))
+    .collect()
+
+    for (const notification of notifications) {
+      await ctx.db.delete(notification._id)
+    }
+
+
     // decrement user posts count by 1
     await ctx.db.patch(currentUser._id, {
       posts: Math.max(currentUser.posts - 1, 0),
