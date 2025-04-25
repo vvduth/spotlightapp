@@ -148,6 +148,32 @@ export const deletePost = mutation({
     if (post.userId !== currentUser._id) {
       throw new Error("You are not the owner of this post");
     }
-    await ctx.db.delete(post._id);
+    
+    // delete all likes
+    const likes = await ctx.db
+    .query("likes").withIndex("by_post", (q) => q.eq("postId", postId))
+    .collect()
+
+    for (const like of likes) {
+      await ctx.db.delete(like._id)
+    }
+
+    const comments = await ctx.db
+      .query("comments").withIndex("by_post", (q) => q.eq("postId", postId))
+      .collect()
+    for (const comment of comments) {
+      await ctx.db.delete(comment._id)
+    }
+
+    // delete storage image
+    await ctx.storage.delete(post.storageId)  
+
+    // delete post
+    await ctx.db.delete(postId)
+
+    // decrement user posts count by 1
+    await ctx.db.patch(currentUser._id, {
+      posts: Math.max(currentUser.posts - 1, 0),
+    })
   },
 })

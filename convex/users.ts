@@ -1,4 +1,4 @@
-import { mutation, MutationCtx, QueryCtx } from "./_generated/server";
+import { mutation, MutationCtx, query, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 
 // Create a new task with the given text
@@ -34,6 +34,18 @@ export const createUser = mutation({
     });
   },
 });
+
+export const getUserByClerkId = query({
+  args: { clerkId: v.string() },
+  handler: async (ctx, { clerkId }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+      .first();
+    return user;
+  },
+
+})
 
 
 export async function getAuthenticateduser(ctx: QueryCtx|MutationCtx) {
