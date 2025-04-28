@@ -63,3 +63,21 @@ export async function getAuthenticateduser(ctx: QueryCtx|MutationCtx) {
     }
     return currentUser;
 }
+
+
+export const updateProfile = mutation({
+  args : {
+    fullname: v.optional(v.string()),
+    bio: v.optional(v.string()),
+  },
+  handler: async (ctx, { fullname, bio }) => {
+    const currentUser = await getAuthenticateduser(ctx);
+    if (!currentUser) {
+      throw new Error("User not found");
+    }
+    await ctx.db.patch(currentUser._id, {
+      fullname: fullname, 
+      bio: bio,
+    })
+  }
+})
