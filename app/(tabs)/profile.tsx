@@ -5,6 +5,12 @@ import {
   ScrollView,
   FlatList,
   Modal,
+  TouchableWithoutFeedback,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  TextInput,
+  StyleSheet,
 } from "react-native";
 import React, { useState } from "react";
 import { useAuth } from "@clerk/clerk-expo";
@@ -15,7 +21,7 @@ import { Loader } from "@/components/Loader";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/theme";
 import { Image } from "expo-image";
-import { styles } from "@/styles/create.styles";
+
 import NoPostFound from "@/components/NoPostFound";
 
 export default function Profile() {
@@ -203,6 +209,56 @@ export default function Profile() {
         />
       </ScrollView>
       {/* edit profile modal */}
+      <Modal
+      visible={isEditModalVisible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setIsEditModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.modalContainer}
+          >
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Edit Profile</Text>
+                <TouchableOpacity onPress={() => setIsEditModalVisible(false)}>
+                  <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editedProfile.fullname}
+                  onChangeText={(text) =>
+                    setEditedProfile((prev) => ({ ...prev, fullname: text }))
+                  }
+                  placeholder="Enter your name"
+
+              />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Bio</Text>
+                <TextInput
+                  style={styles.bioInput}
+                  value={editedProfile.bio}
+                  onChangeText={(text) =>
+                    setEditedProfile((prev) => ({ ...prev, bio: text }))
+                  }
+                  numberOfLines={4}
+                  placeholder="Enter your bio"
+                  multiline/>
+              </View>
+              <TouchableOpacity 
+                onPress={handleEditProfile}
+              style={styles.saveButton}>
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
+      </Modal>
       
 
       {/* selected image modal */}
@@ -261,3 +317,65 @@ export default function Profile() {
     </View>
   );
 }
+
+
+const styles =StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: COLORS.background,
+    borderRadius: 10,
+    padding: 20,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: COLORS.primary,
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  inputLabel: {
+    fontSize: 16,
+    color: COLORS.primary,
+    marginBottom: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: COLORS.accent,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: COLORS.primary,
+  },
+  bioInput:{
+      borderWidth:1,
+      borderColor:"#ccc",
+      borderRadius:5,
+      paddingHorizontal :10,
+      paddingVertical :8,
+      color :COLORS.primary
+  },
+  saveButton: {
+    backgroundColor: COLORS.primary,
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    color: COLORS.background,
+    fontWeight: "bold",
+  },
+})
