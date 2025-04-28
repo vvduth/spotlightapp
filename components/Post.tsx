@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import React, { useState } from "react";
-import { Link } from "expo-router";
+import { Href, Link } from "expo-router";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/theme";
@@ -80,7 +80,9 @@ export default function Post({ post }: PostProps) {
     <View style={{ marginBottom: 16 }}>
       {/* header */}
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Link style={{ padding: 8 }} href={"/(tabs)/notification"}>
+        <Link style={{ padding: 8 }} href={
+          convexCurrentUser?._id === post.author._id ? `/(tabs)/profile` : `/user/${post.author._id}` as Href
+        } asChild>
           <TouchableOpacity style={{ flexDirection: "row", gap: 8 }}>
             {/* author avatar */}
             <Image

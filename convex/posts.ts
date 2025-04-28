@@ -206,7 +206,7 @@ export const getPostByUserId = query({
       .collect();
 
     if (!posts || posts.length === 0) {
-      throw new Error("No posts found");
+      return  [];
     }
     return posts;
   },

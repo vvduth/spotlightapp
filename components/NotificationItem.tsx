@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/theme";
-import { Link } from "expo-router";
+import { Href, Link } from "expo-router";
 import { Image } from "expo-image";
 import { formatDistanceToNow } from "date-fns";
 import { Id } from "@/convex/_generated/dataModel";
@@ -48,7 +48,7 @@ const NotificationItem = ({ notification }: NotificationItemProps) => {
           padding: 10,
         }}
       >
-        <Link href={`/notification`} asChild>
+        <Link href={`/user/${notification.sender._id}` as Href} asChild>
           <TouchableOpacity style={{ flexDirection: "row", gap: 8 }}>
             <Image
               style={{ width: 40, height: 40, borderRadius: 20 }}
