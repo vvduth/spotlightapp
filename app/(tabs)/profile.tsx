@@ -1,4 +1,11 @@
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  FlatList,
+  Modal,
+} from "react-native";
 import React, { useState } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 import { useMutation, useQuery } from "convex/react";
@@ -8,6 +15,8 @@ import { Loader } from "@/components/Loader";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/theme";
 import { Image } from "expo-image";
+import { styles } from "@/styles/create.styles";
+import NoPostFound from "@/components/NoPostFound";
 
 export default function Profile() {
   const { signOut, userId } = useAuth();
@@ -64,11 +73,13 @@ export default function Profile() {
         </View>
       </View>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={{
-          flex: 1,
-          gap: 50,
-          flexDirection: "row"
-        }}>
+        <View
+          style={{
+            flex: 1,
+            gap: 50,
+            flexDirection: "row",
+          }}
+        >
           {/* avatar */}
           <View>
             <Image
@@ -90,7 +101,7 @@ export default function Profile() {
               flexDirection: "row",
               justifyContent: "space-between",
               marginBottom: 20,
-              gap: 35
+              gap: 35,
             }}
           >
             {/* number of post */}
@@ -111,18 +122,142 @@ export default function Profile() {
           </View>
         </View>
         <View>
-          <Text style={{
-            fontSize: 20,
-            fontWeight: "bold",
-            color: COLORS.accent,
-            marginBottom: 10,
-          
-          }}>{currentUser.fullname}</Text>
-          {currentUser.bio && (
-            <Text>{currentUser.bio}</Text>
-          )}
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "bold",
+              color: COLORS.accent,
+              marginBottom: 10,
+            }}
+          >
+            {currentUser.fullname}
+          </Text>
+          {currentUser.bio && <Text>{currentUser.bio}</Text>}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-evenly",
+              alignItems: "center",
+              marginTop: 20,
+            }}
+          >
+            <TouchableOpacity
+              style={{
+                backgroundColor: COLORS.primary,
+                padding: 10,
+                borderRadius: 5,
+                width: "45%",
+                alignItems: "center",
+              }}
+              onPress={() => setIsEditModalVisible(true)}
+            >
+              <Text
+                style={{
+                  color: COLORS.background,
+                  fontWeight: "bold",
+                }}
+              >
+                Edit profile
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                backgroundColor: COLORS.accent,
+                padding: 10,
+                borderRadius: 5,
+                width: "45%",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons name="share-outline" size={20} color={"white"} />
+            </TouchableOpacity>
+          </View>
         </View>
+        {posts.length === 0 && <NoPostFound />}
+        <FlatList
+          data={posts}
+          numColumns={3}
+          scrollEnabled={false}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={{
+                width: 120,
+                height: 120,
+                marginTop: 10,
+                gridAutoColumns: "3",
+                margin: 2,
+              }}
+              onPress={() => setSelectedPost(item)}
+            >
+              <Image
+                source={item.imageUrl}
+                contentFit="cover"
+                transition={200}
+                style={{
+                  width: 120,
+                  height: 120,
+                }}
+              />
+            </TouchableOpacity>
+          )}
+        />
       </ScrollView>
+      {/* edit profile modal */}
+      
+
+      {/* selected image modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={!!selectedPost}
+        onRequestClose={() => setSelectedPost(null)}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+            }}
+          >
+            {selectedPost && (
+              <View style={{
+                width: "80%",
+                height: "60%",
+                backgroundColor: COLORS.background,
+                justifyContent: "center",
+                alignItems: "center",
+              }}>
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    backgroundColor: COLORS.background,
+                    borderRadius: 50,
+                    padding: 10,
+                  }}
+                >
+                  <TouchableOpacity onPress={() => setSelectedPost(null)}>
+                    <Ionicons
+                      name="close-outline"
+                      size={24}
+                      color={COLORS.accent}
+                      style={{ margin: 10 }}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <Image 
+                  source={selectedPost.imageUrl}
+                  cachePolicy={"memory-disk"}
+                  style={{
+                    width: "90%",  
+                    height: "80%",}}
+
+                />
+                </View>
+            )}
+          </View>
+        </Modal>
     </View>
   );
 }
