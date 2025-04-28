@@ -41,7 +41,10 @@ export default function Profile() {
   const posts = useQuery(api.posts.getPostByUserId, {});
   const updatProfile = useMutation(api.users.updateProfile);
 
-  const handleEditProfile = async () => {};
+  const handleEditProfile = async () => {
+    await updatProfile(editedProfile)
+    setIsEditModalVisible(false);
+  };
 
   if (!currentUser || posts === undefined) {
     return <Loader />;
@@ -246,9 +249,11 @@ export default function Profile() {
                   onChangeText={(text) =>
                     setEditedProfile((prev) => ({ ...prev, bio: text }))
                   }
+                  multiline
                   numberOfLines={4}
+                placeholderTextColor={COLORS.surface}
                   placeholder="Enter your bio"
-                  multiline/>
+                  />
               </View>
               <TouchableOpacity 
                 onPress={handleEditProfile}
@@ -364,9 +369,10 @@ const styles =StyleSheet.create({
       borderWidth:1,
       borderColor:"#ccc",
       borderRadius:5,
-      paddingHorizontal :10,
-      paddingVertical :8,
-      color :COLORS.primary
+      padding:10,
+      color: COLORS.primary,
+      height: 100,
+      
   },
   saveButton: {
     backgroundColor: COLORS.primary,
